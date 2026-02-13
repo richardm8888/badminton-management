@@ -9,11 +9,11 @@ export default function MatchCard({ match }) {
         <Text style={styles.date}>{formatDateUK(match.date)}</Text>
         <Text style={styles.opponent}>vs {match.opponent}</Text>
         <Text style={styles.score}>
-          Score: {match.match_score || `${match.gamesFor || match.setsFor || 0} - ${match.gamesAgainst || match.setsAgainst || 0}`}
+          Score: {`${match.games_for} - ${match.games_against}`}
         </Text>
       </View>
       <View style={styles.resultContainer}>
-        <Text style={styles.result}>{match.result}</Text>
+        <Text style={styles.result}>{match.games_for > match.games_against ? 'W' : (match.games_for === match.games_against ? 'D' : 'L')}</Text>
       </View>
     </View>
   );

@@ -8,10 +8,12 @@ export default function AddMatchScreen({ navigation }) {
   const [date, setDate] = useState('');
   const [pairing, setPairing] = useState('');
   const [opponent, setOpponent] = useState('');
-  const [pointsFor, setPointsFor] = useState('');
-  const [pointsAgainst, setPointsAgainst] = useState('');
-  const [setsFor, setSetsFor] = useState('');
-  const [setsAgainst, setSetsAgainst] = useState('');
+  const [set1For, setSet1For] = useState('');
+  const [set1Against, setSet1Against] = useState('');
+  const [set2For, setSet2For] = useState('');
+  const [set2Against, setSet2Against] = useState('');
+  const [set3For, setSet3For] = useState('');
+  const [set3Against, setSet3Against] = useState('');
   const [errors, setErrors] = useState({});
   const [showPairingModal, setShowPairingModal] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -49,6 +51,16 @@ export default function AddMatchScreen({ navigation }) {
       newErrors.opponent = 'Opponent name must be at least 2 characters';
     }
 
+    const set1Result = (parseInt(set1For, 10) || 0) > (parseInt(set1Against, 10) || 0) ? 1 : 0;
+    const set2Result = (parseInt(set2For, 10) || 0) > (parseInt(set2Against, 10) || 0) ? 1 : 0;
+    const set3Result = (parseInt(set3For, 10) || 0) > (parseInt(set3Against, 10) || 0) ? 1 : 0;
+    const setsForValue = set1Result + set2Result + set3Result;
+    const setsAgainstValue = set1Result + set2Result == 2 ? 0 : 3 - setsForValue; // If first 2 sets are won, sets against is 0, otherwise calculate normally
+    
+    const pointsFor = (parseInt(set1For, 10) || 0) + (parseInt(set2For, 10) || 0) + (parseInt(set3For, 10) || 0);
+    const pointsAgainst = (parseInt(set1Against, 10) || 0) + (parseInt(set2Against, 10) || 0) + (parseInt(set3Against, 10) || 0);
+
+
     // Validate points
     if (pointsFor && isNaN(parseInt(pointsFor, 10))) {
       newErrors.pointsFor = 'Points For must be a number';
@@ -58,10 +70,10 @@ export default function AddMatchScreen({ navigation }) {
     }
 
     // Validate sets
-    if (setsFor && isNaN(parseInt(setsFor, 10))) {
+    if (setsForValue && isNaN(parseInt(setsForValue, 10))) {
       newErrors.setsFor = 'Sets For must be a number';
     }
-    if (setsAgainst && isNaN(parseInt(setsAgainst, 10))) {
+    if (setsAgainstValue && isNaN(parseInt(setsAgainstValue, 10))) {
       newErrors.setsAgainst = 'Sets Against must be a number';
     }
 
@@ -69,15 +81,21 @@ export default function AddMatchScreen({ navigation }) {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!validateForm()) {
       Alert.alert('Validation Error', 'Please fix the errors in the form.');
       return;
     }
 
-    const setsForValue = parseInt(setsFor, 10) || 0;
-    const setsAgainstValue = parseInt(setsAgainst, 10) || 0;
+    const set1Result = (parseInt(set1For, 10) || 0) > (parseInt(set1Against, 10) || 0) ? 1 : 0;
+    const set2Result = (parseInt(set2For, 10) || 0) > (parseInt(set2Against, 10) || 0) ? 1 : 0;
+    const set3Result = (parseInt(set3For, 10) || 0) > (parseInt(set3Against, 10) || 0) ? 1 : 0;
+    const setsForValue = set1Result + set2Result + set3Result;
+    const setsAgainstValue = set1Result + set2Result == 2 ? 0 : 3 - setsForValue; // If first 2 sets are won, sets against is 0, otherwise calculate normally
     
+    const pointsFor = (parseInt(set1For, 10) || 0) + (parseInt(set2For, 10) || 0) + (parseInt(set3For, 10) || 0);
+    const pointsAgainst = (parseInt(set1Against, 10) || 0) + (parseInt(set2Against, 10) || 0) + (parseInt(set3Against, 10) || 0);
+
     // Calculate result based on sets
     let result = 'D'; // Draw
     if (setsForValue > setsAgainstValue) {
@@ -96,20 +114,29 @@ export default function AddMatchScreen({ navigation }) {
       setsFor: setsForValue,
       setsAgainst: setsAgainstValue,
     };
-    addMatch(matchObj);
+
+    console.log(matchObj);
     
-    // clear form
-    setDate('');
-    setPairing('');
-    setOpponent('');
-    setPointsFor('');
-    setPointsAgainst('');
-    setSetsFor('');
-    setSetsAgainst('');
-    setErrors({});
-    
-    Alert.alert('Success', 'Match added successfully.');
-    navigation.navigate('Matches');
+    try {
+      await addMatch(matchObj);
+      
+      // clear form
+      setDate('');
+      setPairing('');
+      setOpponent('');
+      setSet1Against('');
+      setSet1For('');
+      setSet2For('');
+      setSet2Against('');
+      setSet3For('');
+      setSet3Against('');
+      setErrors({});
+      
+      Alert.alert('Success', 'Match added successfully.');
+      navigation.navigate('Matches');
+    } catch (error) {
+      Alert.alert('Error', error.message || 'Failed to add match');
+    }
   };
 
   return (
@@ -312,7 +339,7 @@ export default function AddMatchScreen({ navigation }) {
             </View>
 
             <View style={styles.fieldContainer}>
-              <Text style={styles.label}>Points</Text>
+              <Text style={styles.label}>Set 1</Text>
               <View style={styles.numberRow}>
                 <View style={styles.numberInputContainer}>
                   <Text style={styles.numberLabel}>For</Text>
@@ -320,18 +347,18 @@ export default function AddMatchScreen({ navigation }) {
                     <TouchableOpacity
                       style={styles.stepperButton}
                       onPress={() => {
-                        const current = parseInt(pointsFor, 10) || 0;
-                        if (current > 0) setPointsFor(String(current - 1));
+                        const current = parseInt(set1For, 10) || 0;
+                        if (current > 0) setSet1For(String(current - 1));
                       }}
                     >
                       <Text style={styles.stepperButtonText}>−</Text>
                     </TouchableOpacity>
                     <TextInput
-                      value={pointsFor}
+                      value={set1For}
                       onChangeText={(text) => {
                         if (text === '' || /^\d+$/.test(text)) {
-                          setPointsFor(text);
-                          if (errors.pointsFor) setErrors({ ...errors, pointsFor: null });
+                          setSet1For(text);
+                          if (errors.set1For) setErrors({ ...errors, set1For: null });
                         }
                       }}
                       keyboardType="numeric"
@@ -341,8 +368,8 @@ export default function AddMatchScreen({ navigation }) {
                     <TouchableOpacity
                       style={styles.stepperButton}
                       onPress={() => {
-                        const current = parseInt(pointsFor, 10) || 0;
-                        setPointsFor(String(current + 1));
+                        const current = parseInt(set1For, 10) || 0;
+                        setSet1For(String(current + 1));
                       }}
                     >
                       <Text style={styles.stepperButtonText}>+</Text>
@@ -355,18 +382,18 @@ export default function AddMatchScreen({ navigation }) {
                     <TouchableOpacity
                       style={styles.stepperButton}
                       onPress={() => {
-                        const current = parseInt(pointsAgainst, 10) || 0;
-                        if (current > 0) setPointsAgainst(String(current - 1));
+                        const current = parseInt(set1Against, 10) || 0;
+                        if (current > 0) setSet1Against(String(current - 1));
                       }}
                     >
                       <Text style={styles.stepperButtonText}>−</Text>
                     </TouchableOpacity>
                     <TextInput
-                      value={pointsAgainst}
+                      value={set1Against}
                       onChangeText={(text) => {
                         if (text === '' || /^\d+$/.test(text)) {
-                          setPointsAgainst(text);
-                          if (errors.pointsAgainst) setErrors({ ...errors, pointsAgainst: null });
+                          setSet1Against(text);
+                          if (errors.set1Against) setErrors({ ...errors, set1Against: null });
                         }
                       }}
                       keyboardType="numeric"
@@ -376,8 +403,8 @@ export default function AddMatchScreen({ navigation }) {
                     <TouchableOpacity
                       style={styles.stepperButton}
                       onPress={() => {
-                        const current = parseInt(pointsAgainst, 10) || 0;
-                        setPointsAgainst(String(current + 1));
+                        const current = parseInt(set1Against, 10) || 0;
+                        setSet1Against(String(current + 1));
                       }}
                     >
                       <Text style={styles.stepperButtonText}>+</Text>
@@ -385,15 +412,15 @@ export default function AddMatchScreen({ navigation }) {
                   </View>
                 </View>
               </View>
-              {(errors.pointsFor || errors.pointsAgainst) && (
+              {(errors.set1For || errors.set1Against) && (
                 <Text style={styles.errorText}>
-                  {errors.pointsFor || errors.pointsAgainst}
+                  {errors.set1For || errors.set1Against}
                 </Text>
               )}
             </View>
 
             <View style={styles.fieldContainer}>
-              <Text style={styles.label}>Sets</Text>
+              <Text style={styles.label}>Set 2</Text>
               <View style={styles.numberRow}>
                 <View style={styles.numberInputContainer}>
                   <Text style={styles.numberLabel}>For</Text>
@@ -401,17 +428,98 @@ export default function AddMatchScreen({ navigation }) {
                     <TouchableOpacity
                       style={styles.stepperButton}
                       onPress={() => {
-                        const current = parseInt(setsFor, 10) || 0;
-                        if (current > 0) setSetsFor(String(current - 1));
+                        const current = parseInt(set2For, 10) || 0;
+                        if (current > 0) setSet2For(String(current - 1));
                       }}
                     >
                       <Text style={styles.stepperButtonText}>−</Text>
                     </TouchableOpacity>
                     <TextInput
-                      value={setsFor}
+                      value={set2For}
                       onChangeText={(text) => {
                         if (text === '' || /^\d+$/.test(text)) {
-                          setSetsFor(text);
+                          setSet2For(text);
+                          if (errors.set2For) setErrors({ ...errors, set2For: null });
+                        }
+                      }}
+                      keyboardType="numeric"
+                      style={styles.numberInput}
+                      placeholder="0"
+                    />
+                    <TouchableOpacity
+                      style={styles.stepperButton}
+                      onPress={() => {
+                        const current = parseInt(set2For, 10) || 0;
+                        setSet2For(String(current + 1));
+                      }}
+                    >
+                      <Text style={styles.stepperButtonText}>+</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+                <View style={styles.numberInputContainer}>
+                  <Text style={styles.numberLabel}>Against</Text>
+                  <View style={styles.numberStepper}>
+                    <TouchableOpacity
+                      style={styles.stepperButton}
+                      onPress={() => {
+                        const current = parseInt(set2Against, 10) || 0;
+                        if (current > 0) setSet2Against(String(current - 1));
+                      }}
+                    >
+                      <Text style={styles.stepperButtonText}>−</Text>
+                    </TouchableOpacity>
+                    <TextInput
+                      value={set2Against}
+                      onChangeText={(text) => {
+                        if (text === '' || /^\d+$/.test(text)) {
+                          setSet2Against(text);
+                          if (errors.set2Against) setErrors({ ...errors, set2Against: null });
+                        }
+                      }}
+                      keyboardType="numeric"
+                      style={styles.numberInput}
+                      placeholder="0"
+                    />
+                    <TouchableOpacity
+                      style={styles.stepperButton}
+                      onPress={() => {
+                        const current = parseInt(set2Against, 10) || 0;
+                        setSet2Against(String(current + 1));
+                      }}
+                    >
+                      <Text style={styles.stepperButtonText}>+</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+              {(errors.set2For || errors.set2Against) && (
+                <Text style={styles.errorText}>
+                  {errors.set2For || errors.set2Against}
+                </Text>
+              )}
+            </View>
+
+            <View style={styles.fieldContainer}>
+              <Text style={styles.label}>Set 3</Text>
+              <View style={styles.numberRow}>
+                <View style={styles.numberInputContainer}>
+                  <Text style={styles.numberLabel}>For</Text>
+                  <View style={styles.numberStepper}>
+                    <TouchableOpacity
+                      style={styles.stepperButton}
+                      onPress={() => {
+                        const current = parseInt(set3For, 10) || 0;
+                        if (current > 0) setSet3For(String(current - 1));
+                      }}
+                    >
+                      <Text style={styles.stepperButtonText}>−</Text>
+                    </TouchableOpacity>
+                    <TextInput
+                      value={set3For}
+                      onChangeText={(text) => {
+                        if (text === '' || /^\d+$/.test(text)) {
+                          setSet3For(text);
                           if (errors.setsFor) setErrors({ ...errors, setsFor: null });
                         }
                       }}
@@ -422,8 +530,8 @@ export default function AddMatchScreen({ navigation }) {
                     <TouchableOpacity
                       style={styles.stepperButton}
                       onPress={() => {
-                        const current = parseInt(setsFor, 10) || 0;
-                        setSetsFor(String(current + 1));
+                        const current = parseInt(set3For, 10) || 0;
+                        setSet3For(String(current + 1));
                       }}
                     >
                       <Text style={styles.stepperButtonText}>+</Text>
@@ -436,18 +544,18 @@ export default function AddMatchScreen({ navigation }) {
                     <TouchableOpacity
                       style={styles.stepperButton}
                       onPress={() => {
-                        const current = parseInt(setsAgainst, 10) || 0;
-                        if (current > 0) setSetsAgainst(String(current - 1));
+                        const current = parseInt(set3Against, 10) || 0;
+                        if (current > 0) setSet3Against(String(current - 1));
                       }}
                     >
                       <Text style={styles.stepperButtonText}>−</Text>
                     </TouchableOpacity>
                     <TextInput
-                      value={setsAgainst}
+                      value={set3Against}
                       onChangeText={(text) => {
                         if (text === '' || /^\d+$/.test(text)) {
-                          setSetsAgainst(text);
-                          if (errors.setsAgainst) setErrors({ ...errors, setsAgainst: null });
+                          setSet3Against(text);
+                          if (errors.set3Against) setErrors({ ...errors, set3Against: null });
                         }
                       }}
                       keyboardType="numeric"
@@ -457,8 +565,8 @@ export default function AddMatchScreen({ navigation }) {
                     <TouchableOpacity
                       style={styles.stepperButton}
                       onPress={() => {
-                        const current = parseInt(setsAgainst, 10) || 0;
-                        setSetsAgainst(String(current + 1));
+                        const current = parseInt(set3Against, 10) || 0;
+                        setSet3Against(String(current + 1));
                       }}
                     >
                       <Text style={styles.stepperButtonText}>+</Text>
@@ -466,9 +574,9 @@ export default function AddMatchScreen({ navigation }) {
                   </View>
                 </View>
               </View>
-              {(errors.setsFor || errors.setsAgainst) && (
+              {(errors.set3For || errors.set3Against) && (
                 <Text style={styles.errorText}>
-                  {errors.setsFor || errors.setsAgainst}
+                  {errors.set3For || errors.set3Against}
                 </Text>
               )}
             </View>

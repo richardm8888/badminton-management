@@ -4,12 +4,12 @@ import { Picker } from '@react-native-picker/picker';
 import { DataContext } from '../contexts/DataContext';
 
 export default function PairsScreen() {
-  const { pairs, players } = useContext(DataContext);
+  const { pairs, players, addPair } = useContext(DataContext);
   const [showAddModal, setShowAddModal] = useState(false);
   const [player1, setPlayer1] = useState('');
   const [player2, setPlayer2] = useState('');
 
-  const handleAddPair = () => {
+  const handleAddPair = async () => {
     if (!player1 || !player2) {
       Alert.alert('Error', 'Please select both players');
       return;
@@ -18,11 +18,16 @@ export default function PairsScreen() {
       Alert.alert('Error', 'Please select two different players');
       return;
     }
-    // TODO: Add pair to context
-    Alert.alert('Success', `Pair ${player1} / ${player2} created!`);
-    setPlayer1('');
-    setPlayer2('');
-    setShowAddModal(false);
+    
+    try {
+      await addPair(player1, player2);
+      Alert.alert('Success', `Pair ${player1} / ${player2} created!`);
+      setPlayer1('');
+      setPlayer2('');
+      setShowAddModal(false);
+    } catch (error) {
+      Alert.alert('Error', error.message || 'Failed to create pair');
+    }
   };
 
   return (

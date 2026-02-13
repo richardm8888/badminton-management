@@ -1,15 +1,21 @@
-// Convert date from YYYY-MM-DD to DD/MM/YYYY (UK format)
+// Convert date from YYYY-MM-DDTHH:MM:SS to DD/MM/YYYY (UK format)
 export const formatDateUK = (dateString) => {
   if (!dateString) return '';
   
   // Handle if already in DD/MM/YYYY format
   if (dateString.includes('/')) return dateString;
   
+  // Handle ISO format (YYYY-MM-DDTHH:MM:SS) by extracting date part
+  let datePart = dateString;
+  if (dateString.includes('T')) {
+    datePart = dateString.split('T')[0];
+  }
+  
   // Convert from YYYY-MM-DD
-  const parts = dateString.split('-');
+  const parts = datePart.split('-');
   if (parts.length === 3) {
     const [year, month, day] = parts;
-    return `${day}/${month}/${year}`;
+    return `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year}`;
   }
   
   return dateString;

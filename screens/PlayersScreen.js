@@ -1,31 +1,24 @@
 import React, { useContext, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { DataContext } from '../contexts/DataContext';
 
 export default function PlayersScreen() {
-  const { players, games, addPlayer } = useContext(DataContext);
+  const { players, addPlayer } = useContext(DataContext);
   const [newName, setNewName] = useState('');
 
-  // compute simple stats per player (gamesFor, gamesAgainst)
-  const computeStats = (playerName) => {
-    let gf = 0;
-    let ga = 0;
-    let setsWon = 0;
-    let setsLost = 0;
-    games.forEach((g) => {
-      if (g.player1 === playerName || g.player2 === playerName) {
-        gf += g.games_for;
-        ga += g.games_against;
-        setsWon += g.sets_won;
-        setsLost += g.sets_lost;
-      }
-    });
-    return { gf, ga, setsWon, setsLost };
-  };
-
-  const handleAdd = () => {
-    addPlayer(newName);
-    setNewName('');
+  const handleAdd = async () => {
+    if (!newName || newName.trim().length === 0) {
+      Alert.alert('Error', 'Please enter a player name');
+      return;
+    }
+    
+    try {
+      await addPlayer(newName);
+      setNewName('');
+      Alert.alert('Success', 'Player added successfully');
+    } catch (error) {
+      Alert.alert('Error', error.message || 'Failed to add player');
+    }
   };
 
   return (
@@ -35,12 +28,11 @@ export default function PlayersScreen() {
         data={players}
         keyExtractor={(item, index) => index.toString()}
         renderItem={({ item }) => {
-          const stats = computeStats(item);
           return (
             <View style={styles.card}>
-              <Text style={styles.playerName}>{item}</Text>
-              <Text style={{ color: '#fff', marginBottom: 4 }}>Games For: {stats.gf} | Against: {stats.ga}</Text>
-              <Text style={{ color: '#fff' }}>Sets Won: {stats.setsWon} | Lost: {stats.setsLost}</Text>
+              <Text style={styles.playerName}>{item.name}</Text>
+              <Text style={{ color: '#fff', marginBottom: 4 }}>Games For: {item.games_for} | Against: {item.games_against}</Text>
+              <Text style={{ color: '#fff' }}>Sets Won: {item.sets_won} | Lost: {item.sets_lost}</Text>
             </View>
           );
         }}

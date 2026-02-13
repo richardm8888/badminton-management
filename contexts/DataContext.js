@@ -1,42 +1,89 @@
 import React, { createContext, useState, useEffect } from 'react';
-import seedData from '../assets/data/seedData.json';
+import api from '../services/api';
 
 export const DataContext = createContext();
 
 export const DataProvider = ({ children }) => {
   const [players, setPlayers] = useState([]);
   const [pairs, setPairs] = useState([]);
-  const [games, setGames] = useState([]);
   const [matches, setMatches] = useState([]);
   const [teamTotals, setTeamTotals] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  useEffect(() => {
-    // load seed data on mount
-    setPlayers(seedData.players || []);
-    setPairs(seedData.pairs || []);
-    setGames(seedData.games || []);
-    setMatches(seedData.matches || []);
-    setTeamTotals(seedData.team_totals || {});
-  }, []);
+  // Load data from API
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const [playersData, pairsData, matchesData, totalsData] = await Promise.all([
+        api.getPlayers(),
+        api.getPairs(),
+        api.getMatches(),
+        api.getTeamTotals(),
+      ]);
 
-  const addPlayer = (name) => {
-    if (!name || name.trim().length === 0) return;
-    setPlayers((prev) => [...prev, name.trim()]);
+      // Convert players from objects to strings for backward compatibility
+      setPlayers(playersData);
+      setPairs(pairsData);
+      setMatches(matchesData);
+      setTeamTotals(totalsData);
+    } catch (err) {
+      console.error('Error loading data:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const addMatch = (match) => {
-    // match should contain {date, opponent, result, gamesFor, gamesAgainst}
-    setMatches((prev) => [...prev, match]);
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const addPlayer = async (name) => {
+    if (!name || name.trim().length === 0) return;
+    
+    try {
+      await api.addPlayer(name.trim());
+      await loadData(); // Refresh all data
+    } catch (err) {
+      console.error('Error adding player:', err);
+      throw err;
+    }
+  };
+
+  const addPair = async (player1, player2) => {
+    try {
+      await api.addPair(player1, player2);
+      await loadData(); // Refresh all data
+    } catch (err) {
+      console.error('Error adding pair:', err);
+      throw err;
+    }
+  };
+
+  const addMatch = async (match) => {
+    try {
+      await api.addMatch(match);
+      await loadData(); // Refresh all data
+    } catch (err) {
+      console.error('Error adding match:', err);
+      throw err;
+    }
   };
 
   const value = {
     players,
     pairs,
-    games,
     matches,
     teamTotals,
+    loading,
+    error,
     addPlayer,
+    addPair,
     addMatch,
+    refreshData: loadData,
   };
 
   return (

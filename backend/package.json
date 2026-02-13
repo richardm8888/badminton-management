@@ -1,0 +1,23 @@
+{
+  "name": "badminton-stats-api",
+  "version": "1.0.0",
+  "description": "API for Badminton Stats App",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "init-db": "node scripts/initDb.js",
+    "clear-db": "node scripts/clearDb.js",
+    "seed-db": "node scripts/seedDb.js",
+    "reset-db": "npm run clear-db && npm run init-db && npm run seed-db"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "pg": "^8.11.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
