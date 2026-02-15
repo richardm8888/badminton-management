@@ -4,7 +4,7 @@ import { DataContext } from '../contexts/DataContext';
 import MatchCard from '../components/MatchCard';
 
 export default function MatchesScreen() {
-  const { matches } = useContext(DataContext);
+  const { matches, games } = useContext(DataContext);
 
   return (
     <View style={styles.container}>
@@ -12,7 +12,7 @@ export default function MatchesScreen() {
       <FlatList
         data={matches}
         keyExtractor={(item, index) => index.toString()}
-        renderItem={({ item }) => <MatchCard match={item} />}
+        renderItem={({ item }) => <MatchCard match={item} games={games} />}
         ListEmptyComponent={<Text style={{ color: '#888' }}>No matches recorded yet.</Text>}
       />
     </View>

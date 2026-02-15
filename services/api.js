@@ -64,6 +64,12 @@ class ApiService {
     return response.json();
   }
 
+  async getGames() {
+    const response = await fetch(`${API_URL}/matches/games`);
+    if (!response.ok) throw new Error('Failed to fetch games');
+    return response.json();
+  }
+
   async getTeamTotals() {
     const response = await fetch(`${API_URL}/matches/totals`);
     if (!response.ok) throw new Error('Failed to fetch totals');

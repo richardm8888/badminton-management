@@ -4,7 +4,7 @@ import { DataContext } from '../contexts/DataContext';
 import MatchCard from '../components/MatchCard';
 
 export default function HomeScreen() {
-  const { teamTotals, matches } = useContext(DataContext);
+  const { teamTotals, matches, games } = useContext(DataContext);
 
   const formatValue = (key, value) => {
     // Format percentages to 2 decimal places
@@ -50,7 +50,7 @@ export default function HomeScreen() {
       <FlatList
         data={matches}
         keyExtractor={(item, index) => index.toString()}
-        renderItem={({ item }) => <MatchCard match={item} />}
+        renderItem={({ item }) => <MatchCard match={item} games={games} />}
         ListEmptyComponent={<Text style={{ color: '#888', textAlign: 'center' }}>No matches recorded.</Text>}
       />
     </View>

@@ -9,6 +9,28 @@ router.get('/', async (req, res) => {
         SELECT 
             m.date, 
             m.opponent,
+            SUM(CASE WHEN m.result = 'W' THEN 1 ELSE 0 END) as games_for, 
+            SUM(CASE WHEN m.result = 'W' THEN 0 ELSE 1 END) as games_against
+        FROM matches m
+        LEFT JOIN match_sets ms ON m.id = ms.match_id
+        GROUP BY 
+            m.date, m.opponent
+        ORDER BY m.date DESC
+    `);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching matches:', error);
+    res.status(500).json({ error: 'Failed to fetch matches' });
+  }
+});
+
+router.get('/games', async (req, res) => {
+  try {
+    const result = await db.query(`
+        SELECT 
+            m.id,
+            m.date, 
+            m.opponent,
             json_agg(
               json_build_object(
                 'set_number', ms.set_number,
@@ -16,16 +38,18 @@ router.get('/', async (req, res) => {
                 'points_against', ms.points_against
               ) ORDER BY ms.set_number
             ) FILTER (WHERE ms.id IS NOT NULL) as sets,
-            SUM(CASE WHEN m.result = 'W' THEN 1 ELSE 0 END) as games_for, 
-            SUM(CASE WHEN m.result = 'W' THEN 0 ELSE 1 END) as games_against,
-            SUM(m.sets_for) as sets_for,
-            SUM(m.sets_against) as sets_against,
-            SUM(m.points_for) as points_for,
-            SUM(m.points_against) as points_against
+            SUM(CASE WHEN COALESCE(ms.points_for,0) > COALESCE(ms.points_against,0) THEN 1 ELSE 0 END) as sets_for,
+            SUM(CASE WHEN COALESCE(ms.points_for,0) < COALESCE(ms.points_against,0) THEN 1 ELSE 0 END) as sets_against,
+            SUM(ms.points_for) as points_for,
+            SUM(ms.points_against) as points_against,
+            CONCAT(pl1.name, ' / ', pl2.name) as pairing
         FROM matches m
+        JOIN pairs p ON m.pair_id = p.id
+        JOIN players pl1 ON p.player1_id = pl1.id
+        JOIN players pl2 ON p.player2_id = pl2.id
         LEFT JOIN match_sets ms ON m.id = ms.match_id
         GROUP BY 
-            m.date, m.opponent
+            m.id, CONCAT(pl1.name, ' / ', pl2.name)
         ORDER BY m.date DESC
     `);
     res.json(result.rows);
@@ -44,11 +68,6 @@ router.get('/totals', async (req, res) => {
             SUM(CASE WHEN games_for > games_against THEN 1 ELSE 0 END) as wins,
             SUM(CASE WHEN games_for < games_against THEN 1 ELSE 0 END) as losses,
             SUM(CASE WHEN games_for = games_against THEN 1 ELSE 0 END) as draws,
-            CASE 
-            WHEN COUNT(*) > 0 
-                THEN ROUND(SUM(CASE WHEN games_for > games_against THEN 1 ELSE 0 END)::decimal / COUNT(*), 4)
-                ELSE 0 
-            END as win_percent,
             SUM(sets_for) as sets_for,
             SUM(sets_against) as sets_against,
             SUM(points_for) as points_for,
@@ -58,12 +77,13 @@ router.get('/totals', async (req, res) => {
                 date, 
                 opponent, 
                 SUM(CASE WHEN result = 'W' THEN 1 ELSE 0 END) as games_for, 
-                SUM(CASE WHEN result = 'W' THEN 0 ELSE 1 END) as games_against,
-                SUM(sets_for) as sets_for,
-                SUM(sets_against) as sets_against,
-                SUM(points_for) as points_for,
-                SUM(points_against) as points_against
-            FROM matches 
+                SUM(CASE WHEN result = 'W' THEN 0 ELSE 1 END) as games_against,                
+                SUM(CASE WHEN COALESCE(ms.points_for,0) > COALESCE(ms.points_against,0) THEN 1 ELSE 0 END) as sets_for,
+                SUM(CASE WHEN COALESCE(ms.points_for,0) < COALESCE(ms.points_against,0) THEN 1 ELSE 0 END) as sets_against,
+                SUM(ms.points_for) as points_for,
+                SUM(ms.points_against) as points_against
+            FROM matches  m
+            LEFT JOIN match_sets ms ON m.id = ms.match_id
             GROUP BY 
                 date, opponent
             ORDER BY date DESC

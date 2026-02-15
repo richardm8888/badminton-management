@@ -7,6 +7,7 @@ export const DataProvider = ({ children }) => {
   const [players, setPlayers] = useState([]);
   const [pairs, setPairs] = useState([]);
   const [matches, setMatches] = useState([]);
+  const [games, setGames] = useState([]);
   const [teamTotals, setTeamTotals] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -17,10 +18,11 @@ export const DataProvider = ({ children }) => {
       setLoading(true);
       setError(null);
       
-      const [playersData, pairsData, matchesData, totalsData] = await Promise.all([
+      const [playersData, pairsData, matchesData, gamesData, totalsData] = await Promise.all([
         api.getPlayers(),
         api.getPairs(),
         api.getMatches(),
+        api.getGames(),
         api.getTeamTotals(),
       ]);
 
@@ -28,6 +30,7 @@ export const DataProvider = ({ children }) => {
       setPlayers(playersData);
       setPairs(pairsData);
       setMatches(matchesData);
+      setGames(gamesData);
       setTeamTotals(totalsData);
     } catch (err) {
       console.error('Error loading data:', err);
@@ -77,6 +80,7 @@ export const DataProvider = ({ children }) => {
     players,
     pairs,
     matches,
+    games,
     teamTotals,
     loading,
     error,
