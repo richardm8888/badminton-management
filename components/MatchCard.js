@@ -3,6 +3,24 @@ import { View, Text, StyleSheet } from 'react-native';
 import { formatDateUK } from '../utils/dateHelpers';
 
 export default function MatchCard({ match }) {
+  const renderSets = () => {
+    if (!match.sets || match.sets.length === 0) {
+      return null;
+    }
+    
+    return (
+      <View style={styles.setsContainer}>
+        <Text style={styles.setsLabel}>Sets:</Text>
+        {match.sets.map((set, index) => (
+          <Text key={index} style={styles.setScore}>
+            {set.points_for}-{set.points_against}
+            {index < match.sets.length - 1 ? ', ' : ''}
+          </Text>
+        ))}
+      </View>
+    );
+  };
+
   return (
     <View style={styles.card}>
       <View style={styles.cardContent}>
@@ -11,6 +29,7 @@ export default function MatchCard({ match }) {
         <Text style={styles.score}>
           Score: {`${match.games_for} - ${match.games_against}`}
         </Text>
+        {renderSets()}
       </View>
       <View style={styles.resultContainer}>
         <Text style={styles.result}>{match.games_for > match.games_against ? 'W' : (match.games_for === match.games_against ? 'D' : 'L')}</Text>
@@ -49,6 +68,22 @@ const styles = StyleSheet.create({
   score: {
     color: '#888',
     fontSize: 14,
+  },
+  setsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 6,
+    flexWrap: 'wrap',
+  },
+  setsLabel: {
+    color: '#888',
+    fontSize: 12,
+    marginRight: 6,
+  },
+  setScore: {
+    color: '#0287d6',
+    fontSize: 12,
+    fontWeight: '600',
   },
   resultContainer: {
     width: '25%',

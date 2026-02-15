@@ -52,6 +52,19 @@ const createTables = async () => {
       );
     `);
 
+    // Match Sets table - stores individual set scores
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS match_sets (
+        id SERIAL PRIMARY KEY,
+        match_id INTEGER NOT NULL REFERENCES matches(id) ON DELETE CASCADE,
+        set_number INTEGER NOT NULL CHECK (set_number >= 1 AND set_number <= 3),
+        points_for INTEGER NOT NULL DEFAULT 0,
+        points_against INTEGER NOT NULL DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(match_id, set_number)
+      );
+    `);
+
     await client.query('COMMIT');
     console.log('Database tables created successfully');
   } catch (error) {

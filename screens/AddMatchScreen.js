@@ -87,32 +87,32 @@ export default function AddMatchScreen({ navigation }) {
       return;
     }
 
-    const set1Result = (parseInt(set1For, 10) || 0) > (parseInt(set1Against, 10) || 0) ? 1 : 0;
-    const set2Result = (parseInt(set2For, 10) || 0) > (parseInt(set2Against, 10) || 0) ? 1 : 0;
-    const set3Result = (parseInt(set3For, 10) || 0) > (parseInt(set3Against, 10) || 0) ? 1 : 0;
-    const setsForValue = set1Result + set2Result + set3Result;
-    const setsAgainstValue = set1Result + set2Result == 2 ? 0 : 3 - setsForValue; // If first 2 sets are won, sets against is 0, otherwise calculate normally
+    // Build sets array with only non-empty sets
+    const sets = [];
     
-    const pointsFor = (parseInt(set1For, 10) || 0) + (parseInt(set2For, 10) || 0) + (parseInt(set3For, 10) || 0);
-    const pointsAgainst = (parseInt(set1Against, 10) || 0) + (parseInt(set2Against, 10) || 0) + (parseInt(set3Against, 10) || 0);
-
-    // Calculate result based on sets
-    let result = 'D'; // Draw
-    if (setsForValue > setsAgainstValue) {
-      result = 'W'; // Win
-    } else if (setsForValue < setsAgainstValue) {
-      result = 'L'; // Loss
+    const s1For = parseInt(set1For, 10) || 0;
+    const s1Against = parseInt(set1Against, 10) || 0;
+    if (s1For > 0 || s1Against > 0) {
+      sets.push({ pointsFor: s1For, pointsAgainst: s1Against });
+    }
+    
+    const s2For = parseInt(set2For, 10) || 0;
+    const s2Against = parseInt(set2Against, 10) || 0;
+    if (s2For > 0 || s2Against > 0) {
+      sets.push({ pointsFor: s2For, pointsAgainst: s2Against });
+    }
+    
+    const s3For = parseInt(set3For, 10) || 0;
+    const s3Against = parseInt(set3Against, 10) || 0;
+    if (s3For > 0 || s3Against > 0) {
+      sets.push({ pointsFor: s3For, pointsAgainst: s3Against });
     }
 
     const matchObj = {
       date,
       pairing,
       opponent: opponent.trim(),
-      result,
-      pointsFor: parseInt(pointsFor, 10) || 0,
-      pointsAgainst: parseInt(pointsAgainst, 10) || 0,
-      setsFor: setsForValue,
-      setsAgainst: setsAgainstValue,
+      sets, // Send individual sets to the backend
     };
 
     console.log(matchObj);
