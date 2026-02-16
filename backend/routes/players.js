@@ -61,6 +61,35 @@ router.post('/', async (req, res) => {
   }
 });
 
+// Update a player
+router.put('/:id', async (req, res) => {
+  const { id } = req.params;
+  const { name } = req.body;
+
+  if (!name || name.trim().length === 0) {
+    return res.status(400).json({ error: 'Player name is required' });
+  }
+
+  try {
+    const result = await db.query(
+      'UPDATE players SET name = $1 WHERE id = $2 RETURNING *',
+      [name.trim(), id]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Player not found' });
+    }
+    
+    res.json(result.rows[0]);
+  } catch (error) {
+    if (error.code === '23505') { // Unique violation
+      return res.status(409).json({ error: 'Player name already exists' });
+    }
+    console.error('Error updating player:', error);
+    res.status(500).json({ error: 'Failed to update player' });
+  }
+});
+
 // Delete a player
 router.delete('/:id', async (req, res) => {
   const { id } = req.params;

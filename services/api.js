@@ -89,11 +89,37 @@ class ApiService {
     return response.json();
   }
 
+  async updateMatch(id, matchData) {
+    const response = await fetch(`${API_URL}/matches/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(matchData),
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to update match');
+    }
+    return response.json();
+  }
+
   async deleteMatch(id) {
     const response = await fetch(`${API_URL}/matches/${id}`, {
       method: 'DELETE',
     });
     if (!response.ok) throw new Error('Failed to delete match');
+    return response.json();
+  }
+
+  async updatePlayer(id, name) {
+    const response = await fetch(`${API_URL}/players/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name }),
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to update player');
+    }
     return response.json();
   }
 }

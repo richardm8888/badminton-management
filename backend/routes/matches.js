@@ -205,6 +205,124 @@ router.post('/', async (req, res) => {
   }
 });
 
+// Update a match
+router.put('/:id', async (req, res) => {
+  const { id } = req.params;
+  const { 
+    date, 
+    pairing, 
+    opponent, 
+    sets
+  } = req.body;
+
+  if (!date || !opponent) {
+    return res.status(400).json({ error: 'Date and opponent are required' });
+  }
+
+  if (!sets || !Array.isArray(sets) || sets.length === 0) {
+    return res.status(400).json({ error: 'At least one set is required' });
+  }
+
+  const client = await db.pool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    // Check if match exists
+    const matchCheck = await client.query('SELECT * FROM matches WHERE id = $1', [id]);
+    if (matchCheck.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Match not found' });
+    }
+
+    // Find pair_id if pairing is provided
+    let pairId = null;
+    if (pairing) {
+      const [player1, player2] = pairing.split(' / ').map(name => name.trim());
+      
+      if (player1 && player2) {
+        const player1Result = await client.query('SELECT id FROM players WHERE name = $1', [player1]);
+        const player2Result = await client.query('SELECT id FROM players WHERE name = $1', [player2]);
+        
+        if (player1Result.rows.length > 0 && player2Result.rows.length > 0) {
+          const pairResult = await client.query(
+            'SELECT id FROM pairs WHERE player1_id = $1 AND player2_id = $2',
+            [player1Result.rows[0].id, player2Result.rows[0].id]
+          );
+          
+          if (pairResult.rows.length > 0) {
+            pairId = pairResult.rows[0].id;
+          }
+        }
+      }
+    }
+
+    // Calculate totals from sets
+    let setsFor = 0;
+    let setsAgainst = 0;
+    let pointsFor = 0;
+    let pointsAgainst = 0;
+
+    sets.forEach(set => {
+      const pFor = parseInt(set.pointsFor, 10) || 0;
+      const pAgainst = parseInt(set.pointsAgainst, 10) || 0;
+      
+      pointsFor += pFor;
+      pointsAgainst += pAgainst;
+      
+      if (pFor > pAgainst) {
+        setsFor++;
+      } else if (pAgainst > pFor) {
+        setsAgainst++;
+      }
+    });
+
+    // Calculate result
+    let result = 'D';
+    if (setsFor > setsAgainst) {
+      result = 'W';
+    } else if (setsFor < setsAgainst) {
+      result = 'L';
+    }
+
+    // Update match
+    const matchResult = await client.query(
+      `UPDATE matches SET date = $1, pair_id = $2, opponent = $3, result = $4, 
+       points_for = $5, points_against = $6, sets_for = $7, sets_against = $8 
+       WHERE id = $9 RETURNING *`,
+      [date, pairId, opponent, result, pointsFor, pointsAgainst, setsFor, setsAgainst, id]
+    );
+
+    // Delete old sets
+    await client.query('DELETE FROM match_sets WHERE match_id = $1', [id]);
+
+    // Insert new sets
+    for (let i = 0; i < sets.length; i++) {
+      const set = sets[i];
+      const pFor = parseInt(set.pointsFor, 10) || 0;
+      const pAgainst = parseInt(set.pointsAgainst, 10) || 0;
+      
+      if (pFor > 0 || pAgainst > 0) {
+        await client.query(
+          `INSERT INTO match_sets (match_id, set_number, points_for, points_against)
+           VALUES ($1, $2, $3, $4)`,
+          [id, i + 1, pFor, pAgainst]
+        );
+      }
+    }
+
+    await client.query('COMMIT');
+
+    res.json(matchResult.rows[0]);
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error updating match:', error);
+    res.status(500).json({ error: 'Failed to update match' });
+  } finally {
+    client.release();
+  }
+});
+
 // Delete a match
 router.delete('/:id', async (req, res) => {
   const { id } = req.params;

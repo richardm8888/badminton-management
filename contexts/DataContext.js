@@ -76,6 +76,46 @@ export const DataProvider = ({ children }) => {
     }
   };
 
+  const updateMatch = async (id, match) => {
+    try {
+      await api.updateMatch(id, match);
+      await loadData();
+    } catch (err) {
+      console.error('Error updating match:', err);
+      throw err;
+    }
+  };
+
+  const deleteMatch = async (id) => {
+    try {
+      await api.deleteMatch(id);
+      await loadData();
+    } catch (err) {
+      console.error('Error deleting match:', err);
+      throw err;
+    }
+  };
+
+  const updatePlayer = async (id, name) => {
+    try {
+      await api.updatePlayer(id, name);
+      await loadData();
+    } catch (err) {
+      console.error('Error updating player:', err);
+      throw err;
+    }
+  };
+
+  const deletePlayer = async (id) => {
+    try {
+      await api.deletePlayer(id);
+      await loadData();
+    } catch (err) {
+      console.error('Error deleting player:', err);
+      throw err;
+    }
+  };
+
   const value = {
     players,
     pairs,
@@ -87,6 +127,10 @@ export const DataProvider = ({ children }) => {
     addPlayer,
     addPair,
     addMatch,
+    updateMatch,
+    deleteMatch,
+    updatePlayer,
+    deletePlayer,
     refreshData: loadData,
   };
 

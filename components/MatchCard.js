@@ -1,10 +1,29 @@
 import React from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity } from 'react-native';
+import { View, ScrollView, Text, StyleSheet, Modal, TouchableOpacity, Alert } from 'react-native';
 import { formatDateUK } from '../utils/dateHelpers';
 
-export default function MatchCard({ match, games }) {
+export default function MatchCard({ match, games, onEdit, onDelete }) {
   const [showGames, setShowGames] = React.useState(false);
+  const [showActions, setShowActions] = React.useState(false);
   const filteredGames = games?.filter(game => game.date === match.date && game.opponent === match.opponent) ?? [];
+
+  const handleDelete = (gameId) => {
+    Alert.alert(
+      'Delete Match',
+      'Are you sure you want to delete this match?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Delete', 
+          style: 'destructive',
+          onPress: () => {
+            onDelete?.(gameId);
+            setShowActions(false);
+          }
+        }
+      ]
+    );
+  };
 
   const renderSets = (game) => {
     if (!game.sets || game.sets.length === 0) {
@@ -34,34 +53,68 @@ export default function MatchCard({ match, games }) {
             transparent={true}
             animationType="slide"
             onRequestClose={() => setShowGames(false)}
+            onDismiss={() => setShowGames(false)}
         >
-            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)' }}>
-                <View style={{ backgroundColor: '#fff', padding: 20, borderRadius: 10, width: '80%' }}>
-                    <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 10 }}>Game Details</Text>
+            <ScrollView 
+                style={{ backgroundColor: 'rgba(0,0,0,0.5)', marginTop: 50}}
+                contentContainerStyle={{ padding: 20 }}
+            >
+                <View style={{ backgroundColor: '#1a1a1a', padding: 20, borderRadius: 10, width: '95%', marginHorizontal: '2.5%', borderWidth: 2, borderColor: '#0287d6' }}>
+                    <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 10, color: '#fff' }}>Game Details</Text>
                     {filteredGames.length > 0 ? (
-                        filteredGames.map((game, index) => (
-                            <View key={index} style={{ marginBottom: 10 }}>
-                                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                                    <Text>Game {index + 1}:</Text><Text>{game.pairing}</Text>
-                                </View>
-                                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                                    <Text style={styles.setScore}>{game.sets_for > game.sets_against ? 'W' : (game.sets_for === game.sets_against ? 'D' : 'L')}</Text>
-                                    <View style={styles.setsContainer}>
-                                        <Text style={styles.setsLabel}>Result:</Text>
-                                        <Text key={index} style={styles.setScore}>
-                                            {game.sets_for}-{game.sets_against}
+                        <View>
+                            {filteredGames.map((game, index) => (
+                                <View key={index} style={{ marginBottom: 16, padding: 12, backgroundColor: '#000', borderRadius: 8, borderWidth: 1, borderColor: '#0287d6' }}>
+                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                                        <Text style={{ color: '#fff', fontWeight: 'bold' }}>Game {index + 1}</Text>
+                                        <Text style={{ color: '#0287d6' }}>{game.pairing}</Text>
+                                    </View>
+                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+                                        <Text style={{ color: '#fff', fontSize: 24, fontWeight: 'bold' }}>
+                                            {game.sets_for > game.sets_against ? 'W' : (game.sets_for === game.sets_against ? 'D' : 'L')}
                                         </Text>
+                                        <View style={styles.setsContainer}>
+                                            <Text style={styles.setsLabel}>Result:</Text>
+                                            <Text style={{ ...styles.setScore, fontSize: 14 }}>
+                                                {game.sets_for}-{game.sets_against}
+                                            </Text>
+                                        </View>
+                                    </View>
+                                    {renderSets(game)}
+                                    <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
+                                        <TouchableOpacity 
+                                            style={{ flex: 1, backgroundColor: '#0287d6', padding: 10, borderRadius: 6, alignItems: 'center' }}
+                                            onPress={() => {
+                                                setShowGames(false);
+                                                onEdit?.(game);
+                                            }}
+                                        >
+                                            <Text style={{ color: '#fff', fontWeight: 'bold' }}>Edit</Text>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity 
+                                            style={{ flex: 1, backgroundColor: '#ff4444', padding: 10, borderRadius: 6, alignItems: 'center' }}
+                                            onPress={() => {
+                                                setShowGames(false);
+                                                handleDelete(game.id);
+                                            }}
+                                        >
+                                            <Text style={{ color: '#fff', fontWeight: 'bold' }}>Delete</Text>
+                                        </TouchableOpacity>
                                     </View>
                                 </View>
-                                {renderSets(game)}
-                            </View>
-                        ))
+                            ))}
+                        </View>
                     ) : (
-                        <Text>No game details available.</Text>
+                        <Text style={{ color: '#888' }}>No game details available.</Text>
                     )}
-                    <Text style={{ marginTop: 20, color: '#0287d6', textAlign: 'center' }} onPress={() => setShowGames(false)}>Close</Text>
+                    <TouchableOpacity 
+                        style={{ marginTop: 20, padding: 12, backgroundColor: '#0287d6', borderRadius: 8 }}
+                        onPress={() => setShowGames(false)}
+                    >
+                        <Text style={{ color: '#fff', textAlign: 'center', fontWeight: 'bold' }}>Close</Text>
+                    </TouchableOpacity>
                 </View>
-            </View> 
+            </ScrollView> 
 
         </Modal>
         <TouchableOpacity style={styles.card} onPress={() => setShowGames(true)}>
